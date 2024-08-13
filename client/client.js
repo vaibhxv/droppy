@@ -2581,6 +2581,7 @@ function modeFromShebang(text) {
 // video.js
 function initVideo(el) {
   const view = $(el).parents(".view");
+  
   Promise.all([
     loadStyle("plyr-css", "!/res/lib/plyr.css"),
     loadScript("plyr-js", "!/res/lib/plyr.js"),
@@ -2590,7 +2591,13 @@ function initVideo(el) {
         return setTimeout(verify, 200);
       }
 
-      // pause other loaded videos in this view
+      // Check if the video type is supported before initializing Plyr
+      const canPlay = el.canPlayType(el.type);
+      if (!canPlay) {
+        return showError(view, "Your browser can't play this file due to unsupported format.");
+      }
+
+      // Pause other loaded videos in this view
       view.find("video").each(function() {
         if (this !== el) this.pause();
       });
@@ -2602,16 +2609,16 @@ function initVideo(el) {
         autoplay: !droppy.detects.mobile,
         volume: droppy.get("volume"),
         muted: droppy.get("volume") === 0,
-        keyboardShortcuts: {focused: true, global: true},
-        tooltips: {controls: false, seek: true},
+        keyboardShortcuts: { focused: true, global: true },
+        tooltips: { controls: false, seek: true },
         disableContextMenu: false,
-        storage: {enabled: false},
-        fullscreen: {enable: false},
+        storage: { enabled: false },
+        fullscreen: { enable: false },
         hideControls: true,
       });
 
       player.on("ready", () => {
-        // stop drags from propagating outside the control bar
+        // Stop drags from propagating outside the control bar
         $(view).find(".plyr__controls").on("mousemove", (e) => {
           if (e.originalEvent && e.originalEvent.buttons !== 0) {
             e.stopPropagation();
@@ -2629,7 +2636,8 @@ function initVideo(el) {
 
       player.on("error", (err) => {
         console.error(err);
-        showError(view, "Your browser can't play this file 2");
+        // Provide a more informative error message
+        showError(view, "An error occurred while trying to play this file. The format might be unsupported by your browser.");
       });
 
       player.on("volumechange", () => {
@@ -2638,6 +2646,7 @@ function initVideo(el) {
     })();
   });
 }
+
 
 function initVariables() {
   droppy.activeView = 0;
