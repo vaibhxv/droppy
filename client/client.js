@@ -704,6 +704,8 @@ function upload(view, fd, files) {
   xhr.send(fd);
 }
 
+
+
 function uploadSuccess(id) {
   const info = $(`.upload-info[data-id="${id}"]`);
   info.find(".upload-bar")[0].style.width = "100%";
@@ -733,16 +735,17 @@ function uploadProgress(view, id, sent, total) {
   const now = performance.now();
   const speed = sent / ((now - view[0].uploadStart) / 1e3);
   const elapsed = now - view[0].uploadStart;
-  const secs = ((total / (sent / elapsed)) - elapsed) / 1000;
+  const secs = ((total - sent) / speed) / 1000;
 
   if (Number(view.find(".upload-info")[0].dataset.id) === id) setTitle(progress);
   info.find(".upload-bar")[0].style.width = progress;
   info.find(".upload-percentage")[0].textContent = progress;
   info.find(".upload-time")[0].textContent = [
     secs > 60 ? `${Math.ceil(secs / 60)} mins` : `${Math.ceil(secs)} secs`,
-    `${formatBytes(Math.round(speed / 1e3) * 1e3)}/s`,
+    `${formatBytes(Math.round(speed))}/s`,
   ].join(" @ ");
 }
+
 
 // ============================================================================
 //  General helpers
