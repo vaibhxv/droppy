@@ -2586,13 +2586,10 @@ function initVideo(el) {
   const isMKV = el.getAttribute('data-type') === 'video/x-matroska' || /\.mkv$/i.test(el.src);
 
   if (isMKV) {
-    // Initialize video.js player with hls.js support
-    const videoJsPlayer = videojs(el, {
-      controls: true,
-      autoplay: false,
-      preload: 'auto',
-      techOrder: ['html5'],
-    });
+    // For MKV files, use the basic HTML5 video player
+    el.style.width = '100%';
+    el.style.height = 'auto';
+    el.controls = true;
 
     if (Hls.isSupported()) {
       const hls = new Hls();
@@ -2610,37 +2607,18 @@ function initVideo(el) {
       showError(view, "This video format (MKV) is not supported by your browser. Please convert the video to MP4 or use a different browser.");
     }
 
-    videoJsPlayer.on('error', () => {
+    el.addEventListener('error', () => {
       showError(view, "An error occurred while trying to play this MKV file.");
     });
 
   } else {
-    // Default Plyr initialization for other video formats
-    const player = new Plyr(el, {
-      controls: ["play", "volume", "progress", "current-time", "mute", "captions"],
-      iconUrl: "!/res/lib/plyr.svg",
-      blankUrl: "!/res/lib/blank.mp4",
-      autoplay: !droppy.detects.mobile,
-      volume: droppy.get("volume"),
-      muted: droppy.get("volume") === 0,
-      keyboardShortcuts: { focused: true, global: true },
-      tooltips: { controls: false, seek: true },
-      disableContextMenu: false,
-      storage: { enabled: false },
-      fullscreen: { enable: false },
-      hideControls: true,
-    });
-
-    player.on("error", (err) => {
-      console.error("Plyr Error:", err);
-      showError(view, "An error occurred while trying to play this file. The format might be unsupported by your browser.");
-    });
-
-    player.on("volumechange", () => {
-      droppy.set("volume", player.muted ? 0 : player.volume);
-    });
+    // For other formats, use the basic HTML5 video player
+    el.style.width = '100%';
+    el.style.height = 'auto';
+    el.controls = true;
   }
 }
+
 
 
 
