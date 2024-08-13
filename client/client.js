@@ -2592,15 +2592,23 @@ function initVideo(el) {
       }
 
       const fileType = el.type || el.getAttribute('data-type');
-      
-      // Add support for MKV format
-      if (fileType === 'video/x-matroska' || fileType === 'video/mkv' || /\.mkv$/i.test(el.src)) {
-        if (typeof el.canPlayType === "function" && el.canPlayType('video/mp4') === "") {
-          // Your browser likely does not support MKV natively.
-          return showError(view, "MKV format is not supported natively by your browser. Consider converting the file to MP4.");
+      const isMKV = fileType === 'video/x-matroska' || fileType === 'video/mkv' || /\.mkv$/i.test(el.src);
+
+      // Check for MKV and handle it gracefully
+      if (isMKV) {
+        console.warn("MKV format detected. This format might not be supported by all browsers.");
+        try {
+          // Attempt to play MKV
+          const canPlayMKV = el.canPlayType('video/x-matroska');
+          if (!canPlayMKV || canPlayMKV === "") {
+            throw new Error("MKV format not supported");
+          }
+        } catch (error) {
+          // If MKV is not supported, show an error message and suggest a fallback
+          return showError(view, "This video format (MKV) is not supported by your browser. Please convert the video to MP4 or use a different browser.");
         }
       }
-      
+
       // Pause other loaded videos in this view
       view.find("video").each(function() {
         if (this !== el) this.pause();
@@ -2639,9 +2647,13 @@ function initVideo(el) {
       });
 
       player.on("error", (err) => {
-        console.error(err);
-        // Provide a more informative error message
-        showError(view, "An error occurred while trying to play this file. The format might be unsupported by your browser.");
+        console.error("Plyr Error:", err);
+        // Show a fallback error message for MKV files
+        if (isMKV) {
+          showError(view, "This video format (MKV) is not supported by your browser. Please convert the video to MP4 or use a different browser.");
+        } else {
+          showError(view, "An error occurred while trying to play this file. The format might be unsupported by your browser.");
+        }
       });
 
       player.on("volumechange", () => {
@@ -2650,6 +2662,7 @@ function initVideo(el) {
     })();
   });
 }
+
 
 
 
