@@ -2591,12 +2591,16 @@ function initVideo(el) {
         return setTimeout(verify, 200);
       }
 
-      // Check if the video type is supported before initializing Plyr
-      const canPlay = el.canPlayType(el.type);
-      if (!canPlay) {
-        return showError(view, "Your browser can't play this file due to unsupported format.");
+      const fileType = el.type || el.getAttribute('data-type');
+      
+      // Add support for MKV format
+      if (fileType === 'video/x-matroska' || fileType === 'video/mkv' || /\.mkv$/i.test(el.src)) {
+        if (typeof el.canPlayType === "function" && el.canPlayType('video/mp4') === "") {
+          // Your browser likely does not support MKV natively.
+          return showError(view, "MKV format is not supported natively by your browser. Consider converting the file to MP4.");
+        }
       }
-
+      
       // Pause other loaded videos in this view
       view.find("video").each(function() {
         if (this !== el) this.pause();
@@ -2646,6 +2650,7 @@ function initVideo(el) {
     })();
   });
 }
+
 
 
 function initVariables() {
