@@ -1734,10 +1734,7 @@ function openFile(view, newFolder, file, opts) {
     updatePath(view);
     openMedia(view);
   } else if (Object.keys(droppy.videoTypes).includes(e)) { // Video
-    if (!droppy.detects.videoTypes[droppy.videoTypes[e]]) {
-      showError(view, "Your browser can't play this file");
-      updateLocation(view, view[0].currentFolder);
-    } else {
+     
       view[0].currentFile = file;
       view[0].currentFolder = newFolder;
       pushHistory(view, join(view[0].currentFolder, view[0].currentFile));
@@ -1749,7 +1746,7 @@ function openFile(view, newFolder, file, opts) {
       }
 
       openMedia(view);
-    }
+    
   } else if (Object.keys(droppy.audioTypes).includes(e)) { // Audio
     if (opts.ref) {
       play(view, $(opts.ref).parents(".data-row"));
@@ -2311,7 +2308,7 @@ function play(view, index) {
     player.play();
     onNewAudio(view);
   } else {
-    return showError(view, "Your browser can't play this file");
+    return showError(view, "audio format problem.");
   }
 
   row.addClass("playing").siblings().removeClass("playing");
@@ -2632,7 +2629,7 @@ function initVideo(el) {
 
       player.on("error", (err) => {
         console.error(err);
-        showError(view, "Your browser can't play this file");
+        showError(view, "Your browser can't play this file 2");
       });
 
       player.on("volumechange", () => {
