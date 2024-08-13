@@ -2582,15 +2582,17 @@ function modeFromShebang(text) {
 function initVideo(el) {
   const view = $(el).parents(".view");
 
-  // Check if the video is MKV
+  // Apply basic styling and controls
+  el.style.width = '100%';
+  el.style.height = 'auto';
+  el.controls = true;
+
+  // Check if the video is MKV or another format
   const isMKV = el.getAttribute('data-type') === 'video/x-matroska' || /\.mkv$/i.test(el.src);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   if (isMKV) {
-    // For MKV files, use the basic HTML5 video player
-    el.style.width = '100%';
-    el.style.height = 'auto';
-    el.controls = true;
-
+    // Handle MKV files
     if (Hls.isSupported()) {
       const hls = new Hls();
       hls.loadSource(el.src);
@@ -2598,7 +2600,7 @@ function initVideo(el) {
       hls.on(Hls.Events.MANIFEST_PARSED, function() {
         el.play();
       });
-    } else if (el.canPlayType('application/vnd.apple.mpegurl')) {
+    } else if (el.canPlayType('application/vnd.apple.mpegurl') || isSafari) {
       el.src = el.src;
       el.addEventListener('loadedmetadata', function() {
         el.play();
@@ -2612,12 +2614,19 @@ function initVideo(el) {
     });
 
   } else {
-    // For other formats, use the basic HTML5 video player
-    el.style.width = '100%';
-    el.style.height = 'auto';
-    el.controls = true;
+    // Handle other formats
+    // MP4 should be generally supported on all browsers including Safari
+    if (el.canPlayType('video/mp4')) {
+      el.src = el.src; // Ensure the correct source is set
+      el.addEventListener('loadedmetadata', function() {
+        el.play();
+      });
+    } else {
+      showError(view, "This video format is not supported by your browser.");
+    }
   }
 }
+
 
 
 
