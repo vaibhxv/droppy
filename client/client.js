@@ -2581,87 +2581,67 @@ function modeFromShebang(text) {
 // video.js
 function initVideo(el) {
   const view = $(el).parents(".view");
-  
-  Promise.all([
-    loadStyle("plyr-css", "!/res/lib/plyr.css"),
-    loadScript("plyr-js", "!/res/lib/plyr.js"),
-  ]).then(() => {
-    (function verify() {
-      if (!("Plyr" in window)) {
-        return setTimeout(verify, 200);
-      }
 
-      const fileType = el.type || el.getAttribute('data-type');
-      const isMKV = fileType === 'video/x-matroska' || fileType === 'video/mkv' || /\.mkv$/i.test(el.src);
+  // Check if the video is MKV
+  const isMKV = el.getAttribute('data-type') === 'video/x-matroska' || /\.mkv$/i.test(el.src);
 
-      // Check for MKV and handle it gracefully
-      if (isMKV) {
-        console.warn("MKV format detected. This format might not be supported by all browsers.");
-        try {
-          // Attempt to play MKV
-          const canPlayMKV = el.canPlayType('video/x-matroska');
-          if (!canPlayMKV || canPlayMKV === "") {
-            throw new Error("MKV format not supported");
-          }
-        } catch (error) {
-          // If MKV is not supported, show an error message and suggest a fallback
-          return showError(view, "This video format (MKV) is not supported by your browser. Please convert the video to MP4 or use a different browser.");
-        }
-      }
+  if (isMKV) {
+    // Initialize video.js player with hls.js support
+    const videoJsPlayer = videojs(el, {
+      controls: true,
+      autoplay: false,
+      preload: 'auto',
+      techOrder: ['html5'],
+    });
 
-      // Pause other loaded videos in this view
-      view.find("video").each(function() {
-        if (this !== el) this.pause();
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(el.src);
+      hls.attachMedia(el);
+      hls.on(Hls.Events.MANIFEST_PARSED, function() {
+        el.play();
       });
-
-      const player = new Plyr(el, {
-        controls: ["play", "volume", "progress", "current-time", "mute", "captions"],
-        iconUrl: "!/res/lib/plyr.svg",
-        blankUrl: "!/res/lib/blank.mp4",
-        autoplay: !droppy.detects.mobile,
-        volume: droppy.get("volume"),
-        muted: droppy.get("volume") === 0,
-        keyboardShortcuts: { focused: true, global: true },
-        tooltips: { controls: false, seek: true },
-        disableContextMenu: false,
-        storage: { enabled: false },
-        fullscreen: { enable: false },
-        hideControls: true,
+    } else if (el.canPlayType('application/vnd.apple.mpegurl')) {
+      el.src = el.src;
+      el.addEventListener('loadedmetadata', function() {
+        el.play();
       });
+    } else {
+      showError(view, "This video format (MKV) is not supported by your browser. Please convert the video to MP4 or use a different browser.");
+    }
 
-      player.on("ready", () => {
-        // Stop drags from propagating outside the control bar
-        $(view).find(".plyr__controls").on("mousemove", (e) => {
-          if (e.originalEvent && e.originalEvent.buttons !== 0) {
-            e.stopPropagation();
-          }
-        });
-      });
+    videoJsPlayer.on('error', () => {
+      showError(view, "An error occurred while trying to play this MKV file.");
+    });
 
-      player.on("ended", () => {
-        if (droppy.get("loop")) {
-          player.play();
-        } else if (droppy.get("autonext")) {
-          view[0].ps.next();
-        }
-      });
+  } else {
+    // Default Plyr initialization for other video formats
+    const player = new Plyr(el, {
+      controls: ["play", "volume", "progress", "current-time", "mute", "captions"],
+      iconUrl: "!/res/lib/plyr.svg",
+      blankUrl: "!/res/lib/blank.mp4",
+      autoplay: !droppy.detects.mobile,
+      volume: droppy.get("volume"),
+      muted: droppy.get("volume") === 0,
+      keyboardShortcuts: { focused: true, global: true },
+      tooltips: { controls: false, seek: true },
+      disableContextMenu: false,
+      storage: { enabled: false },
+      fullscreen: { enable: false },
+      hideControls: true,
+    });
 
-      player.on("error", (err) => {
-        console.error("Plyr Error:", err);
-        // Show a fallback error message for MKV files
-        if (isMKV) {
-          showError(view, "This video format (MKV) is not supported by your browser. Please convert the video to MP4 or use a different browser.");
-        } else {
-          showError(view, "An error occurred while trying to play this file. The format might be unsupported by your browser.");
-        }
-      });
+    player.on("error", (err) => {
+      console.error("Plyr Error:", err);
+      showError(view, "An error occurred while trying to play this file. The format might be unsupported by your browser.");
+    });
 
-      player.on("volumechange", () => {
-        droppy.set("volume", player.muted ? 0 : player.volume);
-      });
-    })();
-  });
+    player.on("volumechange", () => {
+      droppy.set("volume", player.muted ? 0 : player.volume);
+    });
+  }
 }
+
 
 
 
