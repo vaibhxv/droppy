@@ -1890,13 +1890,10 @@ function loadMedia(view, files) {
 
       // needed for plyr seeking
       view[0].ps.listen("preventDragEvent", (e, _isDown, preventObj) => {
-        if (!e || !e.target) return;
-        preventObj.prevent = e.target.classList.contains("pswp__img");
+        
       });
       view[0].ps.listen("afterChange", function() {
         // clear possible focus on buttons so spacebar works as expected
-        const focused = document.activeElement;
-        if ($(focused).hasClass("pswp__button")) focused.blur();
 
         view[0].currentFile = this.currItem.filename;
         const imgButtons = view.find(".fit-h, .fit-v");
@@ -1936,9 +1933,7 @@ function loadMedia(view, files) {
         replaceHistory(view, join(view[0].currentFolder, view[0].currentFile));
         updatePath(view);
       });
-      view[0].ps.listen("preventDragEvent", (_, isDown) => {
-        view.find(".pswp__container")[0].classList[isDown ? "add" : "remove"]("no-transition");
-      });
+     
       view[0].ps.listen("destroy", () => {
         view[0].switchRequest = true;
         view[0].ps = null;
@@ -1977,7 +1972,7 @@ function loadMedia(view, files) {
       view.find(".zoom-in").off("click").on("click", (e) => {
         const level = view[0].ps.getZoomLevel() * 1.5;
         view[0].ps.zoomTo(level, middle(view[0].ps), 250);
-        $(e.target).parents(".pswp").addClass("pswp--zoomed-in");
+        
       });
       view.find(".zoom-out").off("click").on("click", () => {
         const level = view[0].ps.getZoomLevel() / 1.5;
@@ -2583,49 +2578,22 @@ function initVideo(el) {
   const view = $(el).parents(".view");
 
   // Apply basic styling and controls
-  el.style.width = '100%';
-  el.style.height = 'auto';
   el.controls = true;
+
+  // Set the video to fullscreen within the viewport
+  el.style.width = '100vw';
+  el.style.height = '100vh';
+  el.style.top = '0';
+  el.style.left = '0';
 
   // Check if the video is MKV or another format
   const isMKV = el.getAttribute('data-type') === 'video/x-matroska' || /\.mkv$/i.test(el.src);
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-  if (isMKV) {
-    // Handle MKV files
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(el.src);
-      hls.attachMedia(el);
-      hls.on(Hls.Events.MANIFEST_PARSED, function() {
-        el.play();
-      });
-    } else if (el.canPlayType('application/vnd.apple.mpegurl') || isSafari) {
-      el.src = el.src;
-      el.addEventListener('loadedmetadata', function() {
-        el.play();
-      });
-    } else {
-      showError(view, "This video format (MKV) is not supported by your browser. Please convert the video to MP4 or use a different browser.");
-    }
-
-    el.addEventListener('error', () => {
-      showError(view, "An error occurred while trying to play this MKV file.");
-    });
-
-  } else {
-    // Handle other formats
-    // MP4 should be generally supported on all browsers including Safari
-    if (el.canPlayType('video/mp4')) {
-      el.src = el.src; // Ensure the correct source is set
-      el.addEventListener('loadedmetadata', function() {
-        el.play();
-      });
-    } else {
-      showError(view, "This video format is not supported by your browser.");
-    }
-  }
+  // Auto-play the video
+  el.play();
 }
+
 
 
 
